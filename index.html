@@ -98,9 +98,9 @@
                 <h2 class="text-lg font-bold text-amber-900 flex items-center gap-2">
                     <i class="fa-solid fa-clock-rotate-left text-amber-600"></i> Historique des Factures
                 </h2>
-                <button onclick="clearHistory()" class="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1 self-start sm:self-auto px-2 py-1 bg-red-50 rounded-lg hover:bg-red-100 transition">
+                <!--<button onclick="clearHistory()" class="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1 self-start sm:self-auto px-2 py-1 bg-red-50 rounded-lg hover:bg-red-100 transition">
                     <i class="fa-solid fa-trash-can"></i> Vider l'historique
-                </button>
+                </button>-->
             </div>
 
             <!-- Table/Liste de l'historique -->
@@ -412,9 +412,9 @@
                         <button onclick="viewInvoice('${inv.id}')" class="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg text-xs transition" title="Voir / Imprimer">
                             <i class="fa-solid fa-eye"></i>
                         </button>
-                        <button onclick="deleteInvoice('${inv.id}')" class="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs transition" title="Supprimer">
+                        <!--<button onclick="deleteInvoice('${inv.id}')" class="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs transition" title="Supprimer">
                             <i class="fa-solid fa-trash"></i>
-                        </button>
+                        </button>-->
                     </td>
                 `;
                 tbody.appendChild(tr);
