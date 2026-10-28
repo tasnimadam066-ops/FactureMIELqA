@@ -191,18 +191,18 @@
     </div>
 
     <!-- Styles CSS pour l'impression (8cm de largeur, hauteur dynamique auto) -->
-    <style>
-@media print {
+       <style>
+        @media print {
             @page {
                 size: 8cm auto;
-                margin: 0.2cm;
+                margin: 0;
             }
 
             body, html {
                 background: white !important;
                 width: 8cm !important;
-                height: auto !important;
-                overflow: visible !important;
+                max-height: 20cm !important;
+                overflow: hidden !important;
             }
 
             body * {
@@ -217,13 +217,15 @@
                 position: absolute !important;
                 left: 0 !important;
                 top: 0 !important;
-                width: 7.6cm !important;
-                height: auto !important;
-                max-height: none !important;
+                width: 7.8cm !important;
+                max-width: 7.8cm !important;
+                max-height: 20cm !important;
                 background: white !important;
                 box-shadow: none !important;
-                padding: 0 !important;
+                padding: 2mm !important;
                 margin: 0 !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
 
             #printModal button {
