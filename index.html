@@ -190,19 +190,19 @@
         </div>
     </div>
 
-    <!-- Styles CSS pour l'impression -->
+    <!-- Styles CSS pour l'impression (8cm de largeur, hauteur dynamique auto) -->
     <style>
         @media print {
             @page {
-                size: 10cm 10cm;
-                margin: 0.5cm;
+                size: 8cm auto;
+                margin: 0.2cm;
             }
 
             body, html {
                 background: white !important;
-                width: 10cm !important;
-                height: 10cm !important;
-                overflow: hidden !important;
+                width: 8cm !important;
+                height: auto !important;
+                overflow: visible !important;
             }
 
             body * {
@@ -217,8 +217,9 @@
                 position: absolute !important;
                 left: 0 !important;
                 top: 0 !important;
-                width: 9cm !important;
-                max-height: 9cm !important;
+                width: 7.6cm !important;
+                height: auto !important;
+                max-height: none !important;
                 background: white !important;
                 box-shadow: none !important;
                 padding: 0 !important;
@@ -232,7 +233,7 @@
     </style>
 
     <!-- Script JavaScript -->
-<script>
+    <script>
         const PRODUCTS = [
             { id: 1, name: "Miel Eucalyptus", price: 110, oldPrice: 149, icon: "fa-jar-wheat" },
             { id: 2, name: "Miel aux herbes", price: 115, oldPrice: 149, icon: "fa-leaf" },
@@ -244,9 +245,7 @@
         let quantities = {};
         PRODUCTS.forEach(p => quantities[p.id] = 0);
 
-        // Variable pour suivre la facture en cours de modification
         let editingInvoiceId = null;
-
         const STORAGE_KEY = 'mielqa_invoices_history';
 
         window.onload = function() {
@@ -358,8 +357,6 @@
             document.getElementById('saveButton').className = "w-full bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2";
         }
 
-        // --- FONCTIONS WHATSAPP INTÉGRÉES ---
-
         function formatPhoneNumber(phone) {
             let clean = phone.replace(/\D/g, ''); 
             if (!clean) return '';
@@ -446,8 +443,6 @@
             window.open(url, '_blank');
         }
 
-        // --- GESTION FACTURES ET HISTORIQUE ---
-
         function saveInvoice() {
             const totalCount = Object.values(quantities).reduce((a, b) => a + b, 0);
             if (totalCount === 0) {
@@ -476,7 +471,6 @@
             let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 
             if (editingInvoiceId) {
-                // Mode Mise à Jour : On conserve l'ID et on met à jour l'entrée existante
                 const index = history.findIndex(inv => inv.id === editingInvoiceId);
                 if (index !== -1) {
                     history[index].clientName = document.getElementById('clientName').value.trim() || 'Client de passage';
@@ -486,7 +480,6 @@
                 }
                 cancelEditing();
             } else {
-                // Mode Nouvelle Facture
                 const invoice = {
                     id: 'FACT-' + Date.now().toString().slice(-6),
                     date: new Date().toLocaleString('fr-FR'),
@@ -504,25 +497,20 @@
             resetCalculator();
         }
 
-        // Charger une facture existante dans le formulaire pour modification
         function editInvoice(id) {
             const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
             const inv = history.find(i => i.id === id);
             if (!inv) return;
 
-            // Réinitialiser les quantités actuelles
             PRODUCTS.forEach(p => quantities[p.id] = 0);
 
-            // Remplir les quantités des produits de la facture
             inv.items.forEach(item => {
                 quantities[item.id] = item.qty;
             });
 
-            // Remplir les informations client
             document.getElementById('clientName').value = inv.clientName === 'Client de passage' ? '' : inv.clientName;
             document.getElementById('clientPhone').value = inv.clientPhone === '-' ? '' : inv.clientPhone;
 
-            // Définir l'état d'édition
             editingInvoiceId = inv.id;
             document.getElementById('editingBanner').classList.remove('hidden');
             const saveBtn = document.getElementById('saveButton');
@@ -532,18 +520,15 @@
             renderProducts();
             updateTotals();
 
-            // Remonter vers le haut de la page pour modifier confortablement
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Supprimer une facture spécifique
         function deleteInvoice(id) {
             if (confirm("Voulez-vous vraiment supprimer cette facture ?")) {
                 let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
                 history = history.filter(inv => inv.id !== id);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
                 
-                // Si on était en train d'éditer cette facture, annuler l'édition
                 if (editingInvoiceId === id) {
                     resetCalculator();
                 }
@@ -588,7 +573,6 @@
                             <i class="fa-solid fa-eye"></i>
                         </button>
 
-                        <!-- BOUTON MODIFIER AJOUTÉ -->
                         <button onclick="editInvoice('${inv.id}')" class="p-1.5 bg-orange-100 hover:bg-orange-200 text-orange-800 rounded-lg text-xs transition" title="Modifier">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
