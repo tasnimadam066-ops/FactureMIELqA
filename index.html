@@ -31,9 +31,16 @@
             <!-- Section Sélection des Produits (2 colonnes sur grand écran) -->
             <div class="lg:col-span-2 space-y-4">
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-amber-100">
-                    <h2 class="text-lg font-bold text-amber-900 mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-cart-shopping text-amber-600"></i> Produits MielQa
-                    </h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-amber-900 flex items-center gap-2">
+                            <i class="fa-solid fa-cart-shopping text-amber-600"></i> Produits MielQa
+                        </h2>
+                        <!-- Indicateur de mode édition -->
+                        <div id="editingBanner" class="hidden bg-orange-100 text-orange-800 text-xs px-3 py-1 rounded-lg font-semibold flex items-center gap-2">
+                            <span><i class="fa-solid fa-pen-to-square"></i> Modification en cours</span>
+                            <button onclick="cancelEditing()" class="text-orange-900 hover:text-red-600 font-bold ml-1">×</button>
+                        </div>
+                    </div>
 
                     <!-- Liste des produits -->
                     <div id="productsList" class="space-y-3">
@@ -80,11 +87,11 @@
 
                     <!-- Boutons d'action -->
                     <div class="mt-5 space-y-2">
-                        <button onclick="saveInvoice()" class="w-full bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                        <button id="saveButton" onclick="saveInvoice()" class="w-full bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2">
                             <i class="fa-solid fa-floppy-disk"></i> Enregistrer la Facture
                         </button>
                         
-                        <!-- NOUVEAU BOUTON : ENVOI DIRECT WHATSAPP -->
+                        <!-- ENVOI DIRECT WHATSAPP -->
                         <button onclick="sendCurrentInvoiceViaWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm">
                             <i class="fa-brands fa-whatsapp text-lg"></i> Envoyer via WhatsApp
                         </button>
@@ -104,10 +111,6 @@
                 <h2 class="text-lg font-bold text-amber-900 flex items-center gap-2">
                     <i class="fa-solid fa-clock-rotate-left text-amber-600"></i> Historique des Factures
                 </h2>
-                <button onclick="clearHistory()" class="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1 self-start sm:self-auto px-2 py-1 bg-red-50 rounded-lg hover:bg-red-100 transition">
-                    <i class="fa-solid fa-trash-can"></i> Vider l'historique
-                </button> 
-
             </div>
 
             <!-- Table/Liste de l'historique -->
@@ -241,6 +244,9 @@
         let quantities = {};
         PRODUCTS.forEach(p => quantities[p.id] = 0);
 
+        // Variable pour suivre la facture en cours de modification
+        let editingInvoiceId = null;
+
         const STORAGE_KEY = 'mielqa_invoices_history';
 
         window.onload = function() {
@@ -340,8 +346,16 @@
             PRODUCTS.forEach(p => quantities[p.id] = 0);
             document.getElementById('clientName').value = '';
             document.getElementById('clientPhone').value = '';
+            cancelEditing();
             renderProducts();
             updateTotals();
+        }
+
+        function cancelEditing() {
+            editingInvoiceId = null;
+            document.getElementById('editingBanner').classList.add('hidden');
+            document.getElementById('saveButton').innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Enregistrer la Facture`;
+            document.getElementById('saveButton').className = "w-full bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2";
         }
 
         // --- FONCTIONS WHATSAPP INTÉGRÉES ---
@@ -359,17 +373,26 @@
         function generateWhatsAppUrl(phone, invoiceId, clientName, items, totalAmount, dateStr) {
             const cleanPhone = formatPhoneNumber(phone);
             
-            let message = `🍯 *MielQa - Votre Facture* 🍯\n`;
-            if (invoiceId) message += `*N° Facture:* ${invoiceId}\n`;
-            if (dateStr) message += `*Date:* ${dateStr}\n`;
-            if (clientName && clientName !== 'Client de passage') message += `*Client:* ${clientName}\n`;
+            let message = `MIELQA – La douceur dorée\n\n`;
+            message += `🧾 RÉCAPITULATIF DE VOTRE ACHAT\n\n`;
             
-            message += `\n*Détail de la commande :*\n`;
+            if (dateStr) message += `📅 Date : ${dateStr}\n`;
+            if (clientName && clientName !== 'Client de passage') {
+                message += `👤 Client(e) : ${clientName}\n`;
+            }
+            
+            message += `\n━━━━━━━━━━━━━━\n\n`;
+            
             items.forEach(item => {
-                message += `• ${item.name} x${item.qty} : ${item.total} DH\n`;
+                message += `- ${item.name} × ${item.qty} : ${item.total} DH\n`;
             });
             
-            message += `\n*Total à payer : ${totalAmount} DH*\n\nMerci de votre confiance ! ✨`;
+            message += `\n━━━━━━━━━━━━━━\n\n`;
+            message += `💰 TOTAL : ${totalAmount} DH\n\n`;
+            message += `Merci pour votre visite et votre confiance !\n\n`;
+            message += `📱 Instagram : https://www.instagram.com/honeyspoon.ma?dlrf=Nzd2YWtib2Y4MTNs&utm_source=qr\n`;
+            message += `🌐 Site web : https://honeyspoon.ma/products\n\n`;
+            message += `MIELQA – Le plaisir du miel naturel.`;
 
             const encodedMsg = encodeURIComponent(message);
             
@@ -450,29 +473,67 @@
                 }
             });
 
-            const invoice = {
-                id: 'FACT-' + Date.now().toString().slice(-6),
-                date: new Date().toLocaleString('fr-FR'),
-                clientName: document.getElementById('clientName').value.trim() || 'Client de passage',
-                clientPhone: document.getElementById('clientPhone').value.trim() || '-',
-                items: items,
-                totalAmount: grandTotal
-            };
+            let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 
-            const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-            history.unshift(invoice);
+            if (editingInvoiceId) {
+                // Mode Mise à Jour : On conserve l'ID et on met à jour l'entrée existante
+                const index = history.findIndex(inv => inv.id === editingInvoiceId);
+                if (index !== -1) {
+                    history[index].clientName = document.getElementById('clientName').value.trim() || 'Client de passage';
+                    history[index].clientPhone = document.getElementById('clientPhone').value.trim() || '-';
+                    history[index].items = items;
+                    history[index].totalAmount = grandTotal;
+                }
+                cancelEditing();
+            } else {
+                // Mode Nouvelle Facture
+                const invoice = {
+                    id: 'FACT-' + Date.now().toString().slice(-6),
+                    date: new Date().toLocaleString('fr-FR'),
+                    clientName: document.getElementById('clientName').value.trim() || 'Client de passage',
+                    clientPhone: document.getElementById('clientPhone').value.trim() || '-',
+                    items: items,
+                    totalAmount: grandTotal
+                };
+                history.unshift(invoice);
+            }
+
             localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
 
             renderHistory();
             resetCalculator();
         }
 
-        // Vider tout l'historique
-        function clearHistory() {
-            if (confirm("Êtes-vous sûr de vouloir tout effacer ? Cette action est irréversible.")) {
-                localStorage.removeItem(STORAGE_KEY);
-                renderHistory();
-            }
+        // Charger une facture existante dans le formulaire pour modification
+        function editInvoice(id) {
+            const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            const inv = history.find(i => i.id === id);
+            if (!inv) return;
+
+            // Réinitialiser les quantités actuelles
+            PRODUCTS.forEach(p => quantities[p.id] = 0);
+
+            // Remplir les quantités des produits de la facture
+            inv.items.forEach(item => {
+                quantities[item.id] = item.qty;
+            });
+
+            // Remplir les informations client
+            document.getElementById('clientName').value = inv.clientName === 'Client de passage' ? '' : inv.clientName;
+            document.getElementById('clientPhone').value = inv.clientPhone === '-' ? '' : inv.clientPhone;
+
+            // Définir l'état d'édition
+            editingInvoiceId = inv.id;
+            document.getElementById('editingBanner').classList.remove('hidden');
+            const saveBtn = document.getElementById('saveButton');
+            saveBtn.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Mettre à jour la facture (${inv.id})`;
+            saveBtn.className = "w-full bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2";
+
+            renderProducts();
+            updateTotals();
+
+            // Remonter vers le haut de la page pour modifier confortablement
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // Supprimer une facture spécifique
@@ -481,6 +542,12 @@
                 let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
                 history = history.filter(inv => inv.id !== id);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+                
+                // Si on était en train d'éditer cette facture, annuler l'édition
+                if (editingInvoiceId === id) {
+                    resetCalculator();
+                }
+
                 renderHistory();
             }
         }
@@ -516,8 +583,18 @@
                         <button onclick="sendHistoryInvoiceViaWhatsApp('${inv.id}')" class="p-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg text-xs transition" title="Envoyer par WhatsApp">
                             <i class="fa-brands fa-whatsapp"></i>
                         </button>
+                        
                         <button onclick="viewInvoice('${inv.id}')" class="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg text-xs transition" title="Voir / Imprimer">
                             <i class="fa-solid fa-eye"></i>
+                        </button>
+
+                        <!-- BOUTON MODIFIER AJOUTÉ -->
+                        <button onclick="editInvoice('${inv.id}')" class="p-1.5 bg-orange-100 hover:bg-orange-200 text-orange-800 rounded-lg text-xs transition" title="Modifier">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+
+                        <button onclick="deleteInvoice('${inv.id}')" class="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs transition" title="Supprimer">
+                            <i class="fa-solid fa-trash"></i>
                         </button>
                     </td>
                 `;
