@@ -141,7 +141,7 @@
     </div>
 
     <!-- Modal d'impression / Aperçu -->
-<div id="printModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+   <div id="printModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative space-y-4">
             <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-xl"></i>
@@ -190,18 +190,18 @@
         </div>
     </div>
 
-    <!-- Styles CSS pour l'impression (8cm de largeur, hauteur dynamique auto) -->
-       <style>
+    <!-- Styles CSS pour l'impression -->
+    <style>
         @media print {
             @page {
-                size: 8cm auto;
-                margin: 0;
+                size: 10cm 10cm;
+                margin: 0.5cm;
             }
 
             body, html {
                 background: white !important;
-                width: 8cm !important;
-                max-height: 20cm !important;
+                width: 10cm !important;
+                height: 10cm !important;
                 overflow: hidden !important;
             }
 
@@ -217,15 +217,12 @@
                 position: absolute !important;
                 left: 0 !important;
                 top: 0 !important;
-                width: 7.8cm !important;
-                max-width: 7.8cm !important;
-                max-height: 20cm !important;
+                width: 9cm !important;
+                max-height: 9cm !important;
                 background: white !important;
                 box-shadow: none !important;
-                padding: 2mm !important;
+                padding: 0 !important;
                 margin: 0 !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
             }
 
             #printModal button {
