@@ -141,7 +141,7 @@
     </div>
 
     <!-- Modal d'impression / Aperçu -->
-   <div id="printModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+    <div id="printModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative space-y-4">
             <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-xl"></i>
@@ -238,11 +238,42 @@
             { id: 2, name: "Miel aux herbes", price: 115, oldPrice: 149, icon: "fa-leaf" },
             { id: 3, name: "Miel Dghmous", price: 140, oldPrice: 199, icon: "fa-cubes-stacked" },
             { id: 4, name: "Pack 3 Saveurs", price: 350, oldPrice: 429, icon: "fa-box-open", badge: "PROMO" },
-            { id: 5, name: "Présentoir", price: 49, oldPrice: null, icon: "fa-store" }
+
+            { 
+                id: 5, 
+                name: "Pot miel au eucalyptus", 
+                icon: "fa-jar-wheat",
+                options: [
+                    { size: "120g", price: 20 },
+                    { size: "350g", price: 35 }
+                ]
+            },
+            { 
+                id: 6, 
+                name: "Pot miel aux herbes", 
+                icon: "fa-leaf",
+                options: [
+                    { size: "120g", price: 20 },
+                    { size: "350g", price: 35 }
+                ]
+            },
+            { 
+                id: 7, 
+                name: "Pot miel dghmous", 
+                icon: "fa-cubes-stacked",
+                options: [
+                    { size: "120g", price: 35 },
+                    { size: "350g", price: 100 }
+                ]
+            },
+            { id: 8, name: "Présentoir", price: 49, oldPrice: null, icon: "fa-store" }
         ];
 
-        let quantities = {};
-        PRODUCTS.forEach(p => quantities[p.id] = 0);
+        // Stocke la quantité et l'index de l'option choisie pour chaque produit
+        let itemState = {};
+        PRODUCTS.forEach(p => {
+            itemState[p.id] = { qty: 0, selectedOptionIndex: 0 };
+        });
 
         let editingInvoiceId = null;
         const STORAGE_KEY = 'mielqa_invoices_history';
@@ -261,45 +292,85 @@
             container.innerHTML = '';
 
             PRODUCTS.forEach(p => {
-                const oldPriceHTML = p.oldPrice ? `<span class="text-xs text-slate-400 line-through mr-1">${p.oldPrice} DH</span>` : '';
-                const badgeHTML = p.badge ? `<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded ml-2">${p.badge}</span>` : '';
+                const state = itemState[p.id];
 
-                const div = document.createElement('div');
-                div.className = "flex items-center justify-between p-3 bg-slate-50 hover:bg-amber-50/50 rounded-xl border border-slate-200/80 transition";
-                div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-lg">
-                            <i class="fa-solid ${p.icon}"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-sm text-slate-800">${p.name} ${badgeHTML}</h3>
-                            <div class="text-xs font-semibold text-amber-700">
-                                ${oldPriceHTML}<span>${p.price} DH</span>
+                let div = document.createElement('div');
+                div.className = "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 hover:bg-amber-50/50 rounded-xl border border-slate-200/80 transition";
+
+                if (p.options) {
+                    // Produit avec options (sélection de format)
+                    let optionsHtml = '';
+                    p.options.forEach((opt, idx) => {
+                        const selected = idx === state.selectedOptionIndex ? 'selected' : '';
+                        optionsHtml += `<option value="${idx}" ${selected}>${opt.size} - ${opt.price} DH</option>`;
+                    });
+
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-lg flex-shrink-0">
+                                <i class="fa-solid ${p.icon}"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-800">${p.name}</h3>
+                                <div class="mt-1">
+                                    <select onchange="changeOption(${p.id}, this.value)" class="text-xs bg-white border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:border-amber-500 font-semibold text-amber-800">
+                                        ${optionsHtml}
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="flex items-center gap-2">
-                        <button onclick="changeQty(${p.id}, -1)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 active:scale-95 transition">-</button>
-                        <input type="number" min="0" value="${quantities[p.id]}" onchange="setQty(${p.id}, this.value)" class="w-12 text-center font-bold text-sm bg-white border border-slate-300 rounded-lg py-1 focus:outline-none focus:border-amber-500">
-                        <button onclick="changeQty(${p.id}, 1)" class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold hover:bg-amber-700 active:scale-95 transition">+</button>
-                    </div>
-                `;
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="changeQty(${p.id}, -1)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 active:scale-95 transition">-</button>
+                            <input type="number" min="0" value="${state.qty}" onchange="setQty(${p.id}, this.value)" class="w-12 text-center font-bold text-sm bg-white border border-slate-300 rounded-lg py-1 focus:outline-none focus:border-amber-500">
+                            <button onclick="changeQty(${p.id}, 1)" class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold hover:bg-amber-700 active:scale-95 transition">+</button>
+                        </div>
+                    `;
+                } else {
+                    // Produit classique sans option
+                    const oldPriceHTML = p.oldPrice ? `<span class="text-xs text-slate-400 line-through mr-1">${p.oldPrice} DH</span>` : '';
+                    const badgeHTML = p.badge ? `<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded ml-2">${p.badge}</span>` : '';
+
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-lg flex-shrink-0">
+                                <i class="fa-solid ${p.icon}"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-800">${p.name} ${badgeHTML}</h3>
+                                <div class="text-xs font-semibold text-amber-700">
+                                    ${oldPriceHTML}<span>${p.price} DH</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="changeQty(${p.id}, -1)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 active:scale-95 transition">-</button>
+                            <input type="number" min="0" value="${state.qty}" onchange="setQty(${p.id}, this.value)" class="w-12 text-center font-bold text-sm bg-white border border-slate-300 rounded-lg py-1 focus:outline-none focus:border-amber-500">
+                            <button onclick="changeQty(${p.id}, 1)" class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold hover:bg-amber-700 active:scale-95 transition">+</button>
+                        </div>
+                    `;
+                }
                 container.appendChild(div);
             });
         }
 
+        function changeOption(productId, optionIndex) {
+            itemState[productId].selectedOptionIndex = parseInt(optionIndex);
+            updateTotals();
+        }
+
         function changeQty(productId, delta) {
-            const current = quantities[productId] || 0;
+            const current = itemState[productId].qty || 0;
             const updated = Math.max(0, current + delta);
-            quantities[productId] = updated;
+            itemState[productId].qty = updated;
             renderProducts();
             updateTotals();
         }
 
         function setQty(productId, val) {
             const num = parseInt(val) || 0;
-            quantities[productId] = Math.max(0, num);
+            itemState[productId].qty = Math.max(0, num);
             updateTotals();
         }
 
@@ -312,19 +383,31 @@
             let selectedAny = false;
 
             PRODUCTS.forEach(p => {
-                const qty = quantities[p.id] || 0;
-                if (qty > 0) {
+                const state = itemState[p.id];
+                if (state.qty > 0) {
                     selectedAny = true;
-                    const itemTotal = qty * p.price;
+                    let itemName = p.name;
+                    let itemPrice = p.price;
+                    let itemTotal = 0;
+
+                    if (p.options) {
+                        const opt = p.options[state.selectedOptionIndex];
+                        itemName = `${p.name} (${opt.size})`;
+                        itemPrice = opt.price;
+                        itemTotal = state.qty * opt.price;
+                    } else {
+                        itemTotal = state.qty * p.price;
+                    }
+
                     totalAmount += itemTotal;
-                    totalCount += qty;
+                    totalCount += state.qty;
 
                     const row = document.createElement('div');
                     row.className = "flex justify-between items-center py-1.5";
                     row.innerHTML = `
                         <div>
-                            <span class="font-medium text-slate-700">${p.name}</span>
-                            <span class="text-xs text-slate-400 block">${qty} x ${p.price} DH</span>
+                            <span class="font-medium text-slate-700">${itemName}</span>
+                            <span class="text-xs text-slate-400 block">${state.qty} x ${itemPrice} DH</span>
                         </div>
                         <span class="font-bold text-slate-800">${itemTotal} DH</span>
                     `;
@@ -341,7 +424,10 @@
         }
 
         function resetCalculator() {
-            PRODUCTS.forEach(p => quantities[p.id] = 0);
+            PRODUCTS.forEach(p => {
+                itemState[p.id].qty = 0;
+                itemState[p.id].selectedOptionIndex = 0;
+            });
             document.getElementById('clientName').value = '';
             document.getElementById('clientPhone').value = '';
             cancelEditing();
@@ -355,6 +441,8 @@
             document.getElementById('saveButton').innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Enregistrer la Facture`;
             document.getElementById('saveButton').className = "w-full bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2";
         }
+
+        // --- FONCTIONS WHATSAPP INTÉGRÉES ---
 
         function formatPhoneNumber(phone) {
             let clean = phone.replace(/\D/g, ''); 
@@ -386,7 +474,7 @@
             message += `\n━━━━━━━━━━━━━━\n\n`;
             message += `💰 TOTAL : ${totalAmount} DH\n\n`;
             message += `Merci pour votre visite et votre confiance !\n\n`;
-            message += `📱 Instagram : https://www.instagram.com/honeyspoon.ma?dlrf=Nzd2YWtib2Y4MTNs&utm_source=qr\n`;
+            message += `📱 Instagram : https://www.instagram.com/honeyspoon.ma\n`;
             message += `🌐 Site web : https://honeyspoon.ma/products\n\n`;
             message += `MIELQA – Le plaisir du miel naturel.`;
 
@@ -398,7 +486,7 @@
         }
 
         function sendCurrentInvoiceViaWhatsApp() {
-            const totalCount = Object.values(quantities).reduce((a, b) => a + b, 0);
+            const totalCount = Object.values(itemState).reduce((a, b) => a + b.qty, 0);
             if (totalCount === 0) {
                 alert("Veuillez sélectionner au moins un produit.");
                 return;
@@ -414,11 +502,23 @@
             const items = [];
             let grandTotal = 0;
             PRODUCTS.forEach(p => {
-                const qty = quantities[p.id];
-                if (qty > 0) {
-                    const total = qty * p.price;
+                const state = itemState[p.id];
+                if (state.qty > 0) {
+                    let itemName = p.name;
+                    let itemPrice = p.price;
+                    let total = 0;
+
+                    if (p.options) {
+                        const opt = p.options[state.selectedOptionIndex];
+                        itemName = `${p.name} (${opt.size})`;
+                        itemPrice = opt.price;
+                        total = state.qty * opt.price;
+                    } else {
+                        total = state.qty * p.price;
+                    }
+
                     grandTotal += total;
-                    items.push({ name: p.name, qty, total });
+                    items.push({ name: itemName, qty: state.qty, total });
                 }
             });
 
@@ -442,8 +542,10 @@
             window.open(url, '_blank');
         }
 
+        // --- GESTION FACTURES ET HISTORIQUE ---
+
         function saveInvoice() {
-            const totalCount = Object.values(quantities).reduce((a, b) => a + b, 0);
+            const totalCount = Object.values(itemState).reduce((a, b) => a + b.qty, 0);
             if (totalCount === 0) {
                 alert("Veuillez sélectionner au moins un produit avant d'enregistrer la facture.");
                 return;
@@ -453,16 +555,29 @@
             let grandTotal = 0;
 
             PRODUCTS.forEach(p => {
-                const qty = quantities[p.id];
-                if (qty > 0) {
-                    const total = qty * p.price;
+                const state = itemState[p.id];
+                if (state.qty > 0) {
+                    let itemName = p.name;
+                    let itemPrice = p.price;
+                    let total = 0;
+
+                    if (p.options) {
+                        const opt = p.options[state.selectedOptionIndex];
+                        itemName = `${p.name} (${opt.size})`;
+                        itemPrice = opt.price;
+                        total = state.qty * opt.price;
+                    } else {
+                        total = state.qty * p.price;
+                    }
+
                     grandTotal += total;
                     items.push({
                         id: p.id,
-                        name: p.name,
-                        price: p.price,
-                        qty: qty,
-                        total: total
+                        name: itemName,
+                        price: itemPrice,
+                        qty: state.qty,
+                        total: total,
+                        optionIndex: state.selectedOptionIndex
                     });
                 }
             });
@@ -501,10 +616,18 @@
             const inv = history.find(i => i.id === id);
             if (!inv) return;
 
-            PRODUCTS.forEach(p => quantities[p.id] = 0);
+            PRODUCTS.forEach(p => {
+                itemState[p.id].qty = 0;
+                itemState[p.id].selectedOptionIndex = 0;
+            });
 
             inv.items.forEach(item => {
-                quantities[item.id] = item.qty;
+                if (itemState[item.id]) {
+                    itemState[item.id].qty = item.qty;
+                    if (item.optionIndex !== undefined) {
+                        itemState[item.id].selectedOptionIndex = item.optionIndex;
+                    }
+                }
             });
 
             document.getElementById('clientName').value = inv.clientName === 'Client de passage' ? '' : inv.clientName;
@@ -617,9 +740,7 @@
             });
 
             document.getElementById('modalTotalAmount').innerText = inv.totalAmount + " DH";
-
             document.getElementById('modalWhatsappBtn').setAttribute('onclick', `sendHistoryInvoiceViaWhatsApp('${inv.id}')`);
-
             document.getElementById('printModal').classList.remove('hidden');
         }
 
