@@ -232,50 +232,63 @@
     </style>
 
     <!-- Script JavaScript -->
-    <script>
+<script>
         const PRODUCTS = [
-            { id: 1, name: "Miel Eucalyptus", price: 110, oldPrice: 149, icon: "fa-jar-wheat" },
-            { id: 2, name: "Miel aux herbes", price: 115, oldPrice: 149, icon: "fa-leaf" },
-            { id: 3, name: "Miel Dghmous", price: 140, oldPrice: 199, icon: "fa-cubes-stacked" },
-            { id: 4, name: "Pack 3 Saveurs", price: 350, oldPrice: 429, icon: "fa-box-open", badge: "PROMO" },
+            { id: 1, name: "25 Cuilléres Eucalyptus", price: 110, oldPrice: 149, icon: "fa-jar-wheat" },
+            { id: 2, name: "25 Cuilléres aux herbes", price: 115, oldPrice: 149, icon: "fa-leaf" },
+            { id: 3, name: "25 Cuilléres Dghmous", price: 140, oldPrice: 199, icon: "fa-cubes-stacked" },
+            { id: 4, name: "Pack Cuilléres 3 Saveurs", price: 350, oldPrice: 429, icon: "fa-box-open", badge: "PROMO" },
 
             { 
                 id: 5, 
-                name: "Pot miel au eucalyptus", 
+                name: "Pot miel au eucalyptus 120g", 
                 icon: "fa-jar-wheat",
-                options: [
-                    { size: "120g", price: 20 },
-                    { size: "350g", price: 60 }
-                ]
+                price: 20
             },
-            { 
+            {
                 id: 6, 
-                name: "Pot miel aux herbes", 
-                icon: "fa-leaf",
-                options: [
-                    { size: "120g", price: 20 },
-                    { size: "350g", price: 60 }
-                ]
+                name: "Pot miel au eucalyptus 350g", 
+                icon: "fa-jar-wheat",
+                price: 60
             },
+                
+
             { 
                 id: 7, 
-                name: "Pot miel dghmous", 
-                icon: "fa-cubes-stacked",
-                options: [
-                    { size: "120g", price: 35 },
-                    { size: "350g", price: 100 }
-                ]
+                name: "Pot miel aux herbes 120g", 
+                icon: "fa-leaf",
+                price: 20
             },
-            { id: 8, name: "Présentoir", price: 49, oldPrice: null, icon: "fa-store" }
+            { 
+                id: 8, 
+                name: "Pot miel aux herbes 350g", 
+                icon: "fa-leaf",
+                price: 60
+            },
+
+            { 
+                id: 9, 
+                name: "Pot miel dghmous 120g", 
+                icon: "fa-cubes-stacked",
+                price: 35
+            },
+            { 
+                id: 10, 
+                name: "Pot miel dghmous 350g", 
+                icon: "fa-cubes-stacked",
+                price: 100
+            },
+
+
+            { id: 11, name: "Présentoir", price: 49, oldPrice: null, icon: "fa-store" }
         ];
 
-        // Stocke la quantité et l'index de l'option choisie pour chaque produit
-        let itemState = {};
-        PRODUCTS.forEach(p => {
-            itemState[p.id] = { qty: 0, selectedOptionIndex: 0 };
-        });
+        let quantities = {};
+        PRODUCTS.forEach(p => quantities[p.id] = 0);
 
+        // Variable pour suivre la facture en cours de modification
         let editingInvoiceId = null;
+
         const STORAGE_KEY = 'mielqa_invoices_history';
 
         window.onload = function() {
@@ -292,85 +305,45 @@
             container.innerHTML = '';
 
             PRODUCTS.forEach(p => {
-                const state = itemState[p.id];
+                const oldPriceHTML = p.oldPrice ? `<span class="text-xs text-slate-400 line-through mr-1">${p.oldPrice} DH</span>` : '';
+                const badgeHTML = p.badge ? `<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded ml-2">${p.badge}</span>` : '';
 
-                let div = document.createElement('div');
-                div.className = "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 hover:bg-amber-50/50 rounded-xl border border-slate-200/80 transition";
-
-                if (p.options) {
-                    // Produit avec options (sélection de format)
-                    let optionsHtml = '';
-                    p.options.forEach((opt, idx) => {
-                        const selected = idx === state.selectedOptionIndex ? 'selected' : '';
-                        optionsHtml += `<option value="${idx}" ${selected}>${opt.size} - ${opt.price} DH</option>`;
-                    });
-
-                    div.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-lg flex-shrink-0">
-                                <i class="fa-solid ${p.icon}"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-sm text-slate-800">${p.name}</h3>
-                                <div class="mt-1">
-                                    <select onchange="changeOption(${p.id}, this.value)" class="text-xs bg-white border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:border-amber-500 font-semibold text-amber-800">
-                                        ${optionsHtml}
-                                    </select>
-                                </div>
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between p-3 bg-slate-50 hover:bg-amber-50/50 rounded-xl border border-slate-200/80 transition";
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-lg">
+                            <i class="fa-solid ${p.icon}"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-slate-800">${p.name} ${badgeHTML}</h3>
+                            <div class="text-xs font-semibold text-amber-700">
+                                ${oldPriceHTML}<span>${p.price} DH</span>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="flex items-center justify-end gap-2">
-                            <button onclick="changeQty(${p.id}, -1)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 active:scale-95 transition">-</button>
-                            <input type="number" min="0" value="${state.qty}" onchange="setQty(${p.id}, this.value)" class="w-12 text-center font-bold text-sm bg-white border border-slate-300 rounded-lg py-1 focus:outline-none focus:border-amber-500">
-                            <button onclick="changeQty(${p.id}, 1)" class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold hover:bg-amber-700 active:scale-95 transition">+</button>
-                        </div>
-                    `;
-                } else {
-                    // Produit classique sans option
-                    const oldPriceHTML = p.oldPrice ? `<span class="text-xs text-slate-400 line-through mr-1">${p.oldPrice} DH</span>` : '';
-                    const badgeHTML = p.badge ? `<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded ml-2">${p.badge}</span>` : '';
-
-                    div.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-lg flex-shrink-0">
-                                <i class="fa-solid ${p.icon}"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-sm text-slate-800">${p.name} ${badgeHTML}</h3>
-                                <div class="text-xs font-semibold text-amber-700">
-                                    ${oldPriceHTML}<span>${p.price} DH</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-end gap-2">
-                            <button onclick="changeQty(${p.id}, -1)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 active:scale-95 transition">-</button>
-                            <input type="number" min="0" value="${state.qty}" onchange="setQty(${p.id}, this.value)" class="w-12 text-center font-bold text-sm bg-white border border-slate-300 rounded-lg py-1 focus:outline-none focus:border-amber-500">
-                            <button onclick="changeQty(${p.id}, 1)" class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold hover:bg-amber-700 active:scale-95 transition">+</button>
-                        </div>
-                    `;
-                }
+                    <div class="flex items-center gap-2">
+                        <button onclick="changeQty(${p.id}, -1)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 active:scale-95 transition">-</button>
+                        <input type="number" min="0" value="${quantities[p.id]}" onchange="setQty(${p.id}, this.value)" class="w-12 text-center font-bold text-sm bg-white border border-slate-300 rounded-lg py-1 focus:outline-none focus:border-amber-500">
+                        <button onclick="changeQty(${p.id}, 1)" class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold hover:bg-amber-700 active:scale-95 transition">+</button>
+                    </div>
+                `;
                 container.appendChild(div);
             });
         }
 
-        function changeOption(productId, optionIndex) {
-            itemState[productId].selectedOptionIndex = parseInt(optionIndex);
-            updateTotals();
-        }
-
         function changeQty(productId, delta) {
-            const current = itemState[productId].qty || 0;
+            const current = quantities[productId] || 0;
             const updated = Math.max(0, current + delta);
-            itemState[productId].qty = updated;
+            quantities[productId] = updated;
             renderProducts();
             updateTotals();
         }
 
         function setQty(productId, val) {
             const num = parseInt(val) || 0;
-            itemState[productId].qty = Math.max(0, num);
+            quantities[productId] = Math.max(0, num);
             updateTotals();
         }
 
@@ -383,31 +356,19 @@
             let selectedAny = false;
 
             PRODUCTS.forEach(p => {
-                const state = itemState[p.id];
-                if (state.qty > 0) {
+                const qty = quantities[p.id] || 0;
+                if (qty > 0) {
                     selectedAny = true;
-                    let itemName = p.name;
-                    let itemPrice = p.price;
-                    let itemTotal = 0;
-
-                    if (p.options) {
-                        const opt = p.options[state.selectedOptionIndex];
-                        itemName = `${p.name} (${opt.size})`;
-                        itemPrice = opt.price;
-                        itemTotal = state.qty * opt.price;
-                    } else {
-                        itemTotal = state.qty * p.price;
-                    }
-
+                    const itemTotal = qty * p.price;
                     totalAmount += itemTotal;
-                    totalCount += state.qty;
+                    totalCount += qty;
 
                     const row = document.createElement('div');
                     row.className = "flex justify-between items-center py-1.5";
                     row.innerHTML = `
                         <div>
-                            <span class="font-medium text-slate-700">${itemName}</span>
-                            <span class="text-xs text-slate-400 block">${state.qty} x ${itemPrice} DH</span>
+                            <span class="font-medium text-slate-700">${p.name}</span>
+                            <span class="text-xs text-slate-400 block">${qty} x ${p.price} DH</span>
                         </div>
                         <span class="font-bold text-slate-800">${itemTotal} DH</span>
                     `;
@@ -424,10 +385,7 @@
         }
 
         function resetCalculator() {
-            PRODUCTS.forEach(p => {
-                itemState[p.id].qty = 0;
-                itemState[p.id].selectedOptionIndex = 0;
-            });
+            PRODUCTS.forEach(p => quantities[p.id] = 0);
             document.getElementById('clientName').value = '';
             document.getElementById('clientPhone').value = '';
             cancelEditing();
@@ -474,7 +432,7 @@
             message += `\n━━━━━━━━━━━━━━\n\n`;
             message += `💰 TOTAL : ${totalAmount} DH\n\n`;
             message += `Merci pour votre visite et votre confiance !\n\n`;
-            message += `📱 Instagram : https://www.instagram.com/honeyspoon.ma\n`;
+            message += `📱 Instagram : https://www.instagram.com/honeyspoon.ma?dlrf=Nzd2YWtib2Y4MTNs&utm_source=qr\n`;
             message += `🌐 Site web : https://honeyspoon.ma/products\n\n`;
             message += `MIELQA – Le plaisir du miel naturel.`;
 
@@ -486,7 +444,7 @@
         }
 
         function sendCurrentInvoiceViaWhatsApp() {
-            const totalCount = Object.values(itemState).reduce((a, b) => a + b.qty, 0);
+            const totalCount = Object.values(quantities).reduce((a, b) => a + b, 0);
             if (totalCount === 0) {
                 alert("Veuillez sélectionner au moins un produit.");
                 return;
@@ -502,23 +460,11 @@
             const items = [];
             let grandTotal = 0;
             PRODUCTS.forEach(p => {
-                const state = itemState[p.id];
-                if (state.qty > 0) {
-                    let itemName = p.name;
-                    let itemPrice = p.price;
-                    let total = 0;
-
-                    if (p.options) {
-                        const opt = p.options[state.selectedOptionIndex];
-                        itemName = `${p.name} (${opt.size})`;
-                        itemPrice = opt.price;
-                        total = state.qty * opt.price;
-                    } else {
-                        total = state.qty * p.price;
-                    }
-
+                const qty = quantities[p.id];
+                if (qty > 0) {
+                    const total = qty * p.price;
                     grandTotal += total;
-                    items.push({ name: itemName, qty: state.qty, total });
+                    items.push({ name: p.name, qty, total });
                 }
             });
 
@@ -545,7 +491,7 @@
         // --- GESTION FACTURES ET HISTORIQUE ---
 
         function saveInvoice() {
-            const totalCount = Object.values(itemState).reduce((a, b) => a + b.qty, 0);
+            const totalCount = Object.values(quantities).reduce((a, b) => a + b, 0);
             if (totalCount === 0) {
                 alert("Veuillez sélectionner au moins un produit avant d'enregistrer la facture.");
                 return;
@@ -555,29 +501,16 @@
             let grandTotal = 0;
 
             PRODUCTS.forEach(p => {
-                const state = itemState[p.id];
-                if (state.qty > 0) {
-                    let itemName = p.name;
-                    let itemPrice = p.price;
-                    let total = 0;
-
-                    if (p.options) {
-                        const opt = p.options[state.selectedOptionIndex];
-                        itemName = `${p.name} (${opt.size})`;
-                        itemPrice = opt.price;
-                        total = state.qty * opt.price;
-                    } else {
-                        total = state.qty * p.price;
-                    }
-
+                const qty = quantities[p.id];
+                if (qty > 0) {
+                    const total = qty * p.price;
                     grandTotal += total;
                     items.push({
                         id: p.id,
-                        name: itemName,
-                        price: itemPrice,
-                        qty: state.qty,
-                        total: total,
-                        optionIndex: state.selectedOptionIndex
+                        name: p.name,
+                        price: p.price,
+                        qty: qty,
+                        total: total
                     });
                 }
             });
@@ -585,6 +518,7 @@
             let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 
             if (editingInvoiceId) {
+                // Mode Mise à Jour : On conserve l'ID et on met à jour l'entrée existante
                 const index = history.findIndex(inv => inv.id === editingInvoiceId);
                 if (index !== -1) {
                     history[index].clientName = document.getElementById('clientName').value.trim() || 'Client de passage';
@@ -594,6 +528,7 @@
                 }
                 cancelEditing();
             } else {
+                // Mode Nouvelle Facture
                 const invoice = {
                     id: 'FACT-' + Date.now().toString().slice(-6),
                     date: new Date().toLocaleString('fr-FR'),
@@ -611,28 +546,25 @@
             resetCalculator();
         }
 
+        // Charger une facture existante dans le formulaire pour modification
         function editInvoice(id) {
             const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
             const inv = history.find(i => i.id === id);
             if (!inv) return;
 
-            PRODUCTS.forEach(p => {
-                itemState[p.id].qty = 0;
-                itemState[p.id].selectedOptionIndex = 0;
-            });
+            // Réinitialiser les quantités actuelles
+            PRODUCTS.forEach(p => quantities[p.id] = 0);
 
+            // Remplir les quantités des produits de la facture
             inv.items.forEach(item => {
-                if (itemState[item.id]) {
-                    itemState[item.id].qty = item.qty;
-                    if (item.optionIndex !== undefined) {
-                        itemState[item.id].selectedOptionIndex = item.optionIndex;
-                    }
-                }
+                quantities[item.id] = item.qty;
             });
 
+            // Remplir les informations client
             document.getElementById('clientName').value = inv.clientName === 'Client de passage' ? '' : inv.clientName;
             document.getElementById('clientPhone').value = inv.clientPhone === '-' ? '' : inv.clientPhone;
 
+            // Définir l'état d'édition
             editingInvoiceId = inv.id;
             document.getElementById('editingBanner').classList.remove('hidden');
             const saveBtn = document.getElementById('saveButton');
@@ -642,15 +574,18 @@
             renderProducts();
             updateTotals();
 
+            // Remonter vers le haut de la page pour modifier confortablement
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // Supprimer une facture spécifique
         function deleteInvoice(id) {
             if (confirm("Voulez-vous vraiment supprimer cette facture ?")) {
                 let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
                 history = history.filter(inv => inv.id !== id);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
                 
+                // Si on était en train d'éditer cette facture, annuler l'édition
                 if (editingInvoiceId === id) {
                     resetCalculator();
                 }
@@ -695,6 +630,7 @@
                             <i class="fa-solid fa-eye"></i>
                         </button>
 
+                        <!-- BOUTON MODIFIER AJOUTÉ -->
                         <button onclick="editInvoice('${inv.id}')" class="p-1.5 bg-orange-100 hover:bg-orange-200 text-orange-800 rounded-lg text-xs transition" title="Modifier">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
@@ -740,7 +676,9 @@
             });
 
             document.getElementById('modalTotalAmount').innerText = inv.totalAmount + " DH";
+
             document.getElementById('modalWhatsappBtn').setAttribute('onclick', `sendHistoryInvoiceViaWhatsApp('${inv.id}')`);
+
             document.getElementById('printModal').classList.remove('hidden');
         }
 
