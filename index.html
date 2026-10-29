@@ -190,6 +190,33 @@
         </div>
     </div>
 
+    <!-- Section Bilan Journalier -->
+<div class="bg-white rounded-2xl p-5 shadow-sm border border-amber-100 mt-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-amber-900 flex items-center gap-2">
+            <i class="fa-solid fa-chart-line text-amber-600"></i> Bilan Total par Jour
+        </h2>
+        <button onclick="afficherTotalFacturesParJour()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
+            <i class="fa-solid fa-rotate"></i> Actualiser
+        </button>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm border-collapse">
+            <thead>
+                <tr class="border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase bg-slate-50">
+                    <th class="p-3 rounded-l-lg">Date</th>
+                    <th class="p-3 text-center">N° de Factures</th>
+                    <th class="p-3 text-right rounded-r-lg">Total Gagné</th>
+                </tr>
+            </thead>
+            <tbody id="dailyTotalsBody" class="divide-y divide-slate-100">
+                <!-- Rempli automatiquement par JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
     <!-- Styles CSS pour l'impression -->
     <style>
         @media print {
@@ -695,6 +722,56 @@
         function closeModal() {
             document.getElementById('printModal').classList.add('hidden');
         }
+
+    // Fonction pour calculer et afficher le total des factures par jour
+function afficherTotalFacturesParJour() {
+    const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let totauxParJour = {};
+
+    // 1. Regroupement et calcul de la somme par jour
+    history.forEach(inv => {
+        // On extrait uniquement la date (ex: "27/10/2026" depuis "27/10/2026 14:30:00")
+        const dateJour = inv.date.split(' ')[0]; 
+
+        if (!totauxParJour[dateJour]) {
+            totauxParJour[dateJour] = {
+                nombreFactures: 0,
+                montantTotal: 0
+            };
+        }
+
+        totauxParJour[dateJour].nombreFactures += 1;
+        totauxParJour[dateJour].montantTotal += inv.totalAmount;
+    });
+
+    // 2. Affichage des résultats (dans la console ou dans un conteneur HTML dédié)
+    console.table(totauxParJour); // Visible dans la console du navigateur (F12)
+
+    // Optionnel : Si tu veux l'afficher dynamiquement dans un élément HTML de ta page
+    const containerResultats = document.getElementById('dailyTotalsBody');
+    if (containerResultats) {
+        containerResultats.innerHTML = '';
+        
+        const joursTries = Object.keys(totauxParJour).sort().reverse(); // Du plus récent au plus ancien
+
+        if (joursTries.length === 0) {
+            containerResultats.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-slate-400 text-xs">Aucune donnée disponible</td></tr>`;
+            return;
+        }
+
+        joursTries.forEach(jour => {
+            const data = totauxParJour[jour];
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50 transition border-b border-slate-100 text-xs";
+            tr.innerHTML = `
+                <td class="p-3 font-bold text-amber-800">${jour}</td>
+                <td class="p-3 text-center text-slate-600">${data.nombreFactures}</td>
+                <td class="p-3 text-right font-extrabold text-amber-700">${data.montantTotal} DH</td>
+            `;
+            containerResultats.appendChild(tr);
+        });
+    }
+}
     </script>
 </body>
 </html>
